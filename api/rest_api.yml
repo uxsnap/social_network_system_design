@@ -1,0 +1,758 @@
+openapi: 3.0.4
+
+tags:
+  - name: SocialNetwork
+
+info:
+  title: SocialNetwork API
+  description: Current API describes interaction with SocialNetwork
+  version: 1.0.0
+
+paths:
+  /api/v1/post:
+    get:
+      tags:
+        - post
+      summary: Get posts from feed
+      description: Get posts from personal feed with pagination (includes subscribed users' posts)
+      operationId: getFeedPosts
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Number of posts per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    description: List of posts from feed
+                    items:
+                      $ref: "#/components/schemas/Post"
+                  totalCount:
+                    type: integer
+                    description: Total number of posts available
+                  hasNext:
+                    type: boolean
+                    description: Indicates if there are more posts to load
+                required:
+                  - posts
+                  - totalCount
+                  - hasNext
+              examples:
+                response:
+                  value:
+                    posts:
+                      - id: "019975f2-1be2-7f92-a9b2-94a5db420862"
+                        userId: "019975ef-f426-7bbe-bf93-1e72363059e8"
+                        description: "Amazing place to visit!"
+                        placeId: "019975ef-f426-7bbe-bf93-1e72363059e8"
+                        photoUrls:
+                          [
+                            "https://example.com/photo1.jpg",
+                            "https://example.com/photo2.jpg",
+                          ]
+                        likeCount: 150
+                        commentCount: 25
+                        createdAt: "2023-10-01T12:00:00Z"
+                    totalCount: 150
+                    hasNext: true
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot get feed posts)
+
+    post:
+      tags:
+        - post
+      summary: Create post.
+      description: Create new post with description and place
+      operationId: createPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  description: description
+                placeId:
+                  type: string
+                  description: id of a place
+              required:
+                - description
+                - placeId
+            examples:
+              request:
+                value:
+                  description: "My first visit!"
+                  placeId: 019975ef-f426-7bbe-bf93-1e72363059e8
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: New post id
+                required:
+                  - id
+              examples:
+                response:
+                  value:
+                    id: 019975f2-1be2-7f92-a9b2-94a5db420862
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot create post)
+
+  /api/v1/post/me:
+    get:
+      tags:
+        - post
+      summary: Get my posts
+      description: Get current user's posts with pagination
+      operationId: getMyPosts
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Number of posts per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    description: List of user's posts
+                    items:
+                      $ref: "#/components/schemas/Post"
+                  totalCount:
+                    type: integer
+                    description: Total number of user's posts
+                  hasNext:
+                    type: boolean
+                    description: Indicates if there are more posts to load
+                required:
+                  - posts
+                  - totalCount
+                  - hasNext
+              examples:
+                response:
+                  value:
+                    posts:
+                      - id: "019975f2-1be2-7f92-a9b2-94a5db420862"
+                        userId: "019975ef-f426-7bbe-bf93-1e72363059e8"
+                        description: "My recent visit to Paris"
+                        placeId: "019975ef-f426-7bbe-bf93-1e72363059e8"
+                        photoUrls: ["https://example.com/myphoto1.jpg"]
+                        likeCount: 42
+                        commentCount: 8
+                        createdAt: "2023-10-01T12:00:00Z"
+                    totalCount: 15
+                    hasNext: false
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot get user posts)
+
+  /api/v1/post/{id}/photos:
+    post:
+      tags:
+        - post
+      summary: Add post photos metadata to the post.
+      description: Add post photos metadata to the post.
+      operationId: addPostPhotosMetadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Post id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: array
+                  description: Post Photos Metadata
+                  items:
+                    type: object
+              required:
+                - metadata
+            examples:
+              request:
+                value:
+                  metadata: []
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ids:
+                    type: array
+                    description: Post Photo Ids
+                    items:
+                      type: string
+                required:
+                  - ids
+              examples:
+                response:
+                  value:
+                    ids: ["019975f2-1be2-7f92-a9b2-94a5db420862"]
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot create post)
+
+  /api/v1/post/{id}/like:
+    post:
+      tags:
+        - post
+      summary: Toggle post like
+      description: Toggle post like
+      operationId: togglePostLike
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Post id
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Post id
+                  count:
+                    type: number
+                    description: New like count
+                required:
+                  - id
+                  - count
+              examples:
+                response:
+                  value:
+                    id: 019975f2-1be2-7f92-a9b2-94a5db420862
+                    count: 150
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot like/unlike a post)
+
+  /api/v1/post/{id}/comments:
+    get:
+      tags:
+        - post
+        - comment
+      summary: Get post comments
+      description: Get all comments for a post
+      operationId: getPostComments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Post id
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    description: List of comments
+                    items:
+                      $ref: "#/components/schemas/Comment"
+                required:
+                  - comments
+              examples:
+                response:
+                  value:
+                    comments:
+                      - id: "019975f2-1be2-7f92-a9b2-94a5db420863"
+                        postId: "019975f2-1be2-7f92-a9b2-94a5db420862"
+                        userId: "019975ef-f426-7bbe-bf93-1e72363059e8"
+                        text: "Great post!"
+                        createdAt: "2023-10-01T12:00:00Z"
+                        likeCount: 5
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot get comments)
+
+    post:
+      tags:
+        - post
+        - comment
+      summary: Add comment to post
+      description: Add new comment to a post
+      operationId: addCommentToPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Post id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: Comment text
+              required:
+                - text
+            examples:
+              request:
+                value:
+                  text: "This is an amazing place!"
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: New comment id
+                required:
+                  - id
+              examples:
+                response:
+                  value:
+                    id: "019975f2-1be2-7f92-a9b2-94a5db420863"
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot add comment)
+
+  /api/v1/comment/{id}/like:
+    post:
+      tags:
+        - comment
+      summary: Toggle comment like
+      description: Toggle like for a comment
+      operationId: toggleCommentLike
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Comment id
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Comment id
+                  count:
+                    type: number
+                    description: New like count
+                required:
+                  - id
+                  - count
+              examples:
+                response:
+                  value:
+                    id: "019975f2-1be2-7f92-a9b2-94a5db420863"
+                    count: 10
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot like/unlike a comment)
+
+  /api/v1/place:
+    get:
+      tags:
+        - place
+      summary: Search popular travel places
+      description: Search for popular travel places
+      operationId: searchPlaces
+      parameters:
+        - name: query
+          in: query
+          required: false
+          description: Search query for place names
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Number of places per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  places:
+                    type: array
+                    description: List of found places
+                    items:
+                      $ref: "#/components/schemas/Place"
+                  totalCount:
+                    type: integer
+                    description: Total number of places found
+                  hasNext:
+                    type: boolean
+                    description: Indicates if there are more places to load
+                required:
+                  - places
+                  - totalCount
+                  - hasNext
+              examples:
+                response:
+                  value:
+                    places:
+                      - id: "019975ef-f426-7bbe-bf93-1e72363059e8"
+                        name: "Eiffel Tower"
+                        description: "Iconic iron tower in Paris, France"
+                        location: "Paris, France"
+                        photoUrl: "https://example.com/eiffel.jpg"
+                        postCount: 1500
+                        popularityScore: 9.5
+                        coordinates:
+                          lat: 48.8584
+                          lng: 2.2945
+                    totalCount: 45
+                    hasNext: true
+        400:
+          description: Bad Request
+        500:
+          description: Server error (Cannot search places)
+
+  /api/v1/place/{id}/posts:
+    get:
+      tags:
+        - place
+        - post
+      summary: Get posts for a specific place
+      description: Get all posts related to a specific place with pagination
+      operationId: getPlacePosts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Place id
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Number of posts per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    description: List of posts for the place
+                    items:
+                      $ref: "#/components/schemas/Post"
+                  totalCount:
+                    type: integer
+                    description: Total number of posts for this place
+                  hasNext:
+                    type: boolean
+                    description: Indicates if there are more posts to load
+                required:
+                  - posts
+                  - totalCount
+                  - hasNext
+              examples:
+                response:
+                  value:
+                    posts:
+                      - id: "019975f2-1be2-7f92-a9b2-94a5db420862"
+                        userId: "019975ef-f426-7bbe-bf93-1e72363059e8"
+                        description: "Amazing view from the top!"
+                        placeId: "019975ef-f426-7bbe-bf93-1e72363059e8"
+                        photoUrls:
+                          [
+                            "https://example.com/post1.jpg",
+                            "https://example.com/post2.jpg",
+                          ]
+                        likeCount: 150
+                        commentCount: 25
+                        createdAt: "2023-10-01T12:00:00Z"
+                    totalCount: 1500
+                    hasNext: true
+        400:
+          description: Bad Request
+        404:
+          description: Place not found
+        500:
+          description: Server error (Cannot get place posts)
+
+  /api/v1/user/{id}/subscribe:
+    post:
+      tags:
+        - user
+      summary: Subscribe to user
+      description: Subscribe to another traveler's posts
+      operationId: subscribeToUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID to subscribe to
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Subscription status
+                  message:
+                    type: string
+                    description: Result message
+                required:
+                  - success
+                  - message
+              examples:
+                response:
+                  value:
+                    success: true
+                    message: "Successfully subscribed to user"
+        400:
+          description: Bad Request (Already subscribed or invalid user)
+        404:
+          description: User not found
+        500:
+          description: Server error (Cannot subscribe to user)
+
+components:
+  schemas:
+    Post:
+      required:
+        - id
+        - description
+        - placeId
+        - userId
+        - photoUrls
+        - likeCount
+        - commentCount
+        - createdAt
+      type: object
+      properties:
+        id:
+          type: string
+          example: "019975ef-f426-7bbe-bf93-1e72363059e8"
+        userId:
+          type: string
+          example: "019975ef-f426-7bbe-bf93-1e72363059e8"
+        description:
+          type: string
+          example: "Test Place"
+        placeId:
+          type: string
+          example: "019975ef-f426-7bbe-bf93-1e72363059e8"
+        photoUrls:
+          type: array
+          items:
+            type: string
+        likeCount:
+          type: integer
+          description: Number of likes for the post
+          example: 150
+        commentCount:
+          type: integer
+          description: Number of comments for the post
+          example: 25
+        createdAt:
+          type: string
+          format: date-time
+          description: Post creation timestamp
+          example: "2023-10-01T12:00:00Z"
+
+    Comment:
+      required:
+        - id
+        - postId
+        - userId
+        - text
+        - createdAt
+        - likeCount
+      type: object
+      properties:
+        id:
+          type: string
+          description: Comment unique identifier
+          example: "019975f2-1be2-7f92-a9b2-94a5db420863"
+        postId:
+          type: string
+          description: Related post ID
+          example: "019975f2-1be2-7f92-a9b2-94a5db420862"
+        userId:
+          type: string
+          description: User who created the comment
+          example: "019975ef-f426-7bbe-bf93-1e72363059e8"
+        text:
+          type: string
+          description: Comment text content
+          example: "This is a great post!"
+        createdAt:
+          type: string
+          format: date-time
+          description: Comment creation timestamp
+          example: "2023-10-01T12:00:00Z"
+        likeCount:
+          type: integer
+          description: Number of likes for the comment
+          example: 5
+
+    Place:
+      required:
+        - id
+        - name
+        - location
+        - postCount
+      type: object
+      properties:
+        id:
+          type: string
+          description: Place unique identifier
+          example: "019975ef-f426-7bbe-bf93-1e72363059e8"
+        name:
+          type: string
+          description: Place name
+          example: "Eiffel Tower"
+        description:
+          type: string
+          description: Place description
+          example: "Iconic iron tower in Paris, France"
+        location:
+          type: string
+          description: Geographical location
+          example: "Paris, France"
+        photoUrl:
+          type: string
+          description: Main photo of the place
+          example: "https://example.com/eiffel.jpg"
+        postCount:
+          type: integer
+          description: Number of posts about this place
+          example: 1500
+        popularityScore:
+          type: number
+          format: float
+          description: Popularity score (0-10)
+          example: 9.5
+        coordinates:
+          type: object
+          description: Geographical coordinates
+          properties:
+            lat:
+              type: number
+              format: float
+            lng:
+              type: number
+              format: float
